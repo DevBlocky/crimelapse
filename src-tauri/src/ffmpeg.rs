@@ -140,9 +140,9 @@ fn extract_last_frame(input: &Path) -> anyhow::Result<Vec<u8>> {
     #[rustfmt::skip]
     let result = Command::new(&bins.ffmpeg)
         .arg("-v").arg("error")
-        .arg("-sseof").arg("-1")
+        .arg("-sseof").arg("-3")
         .arg("-i").arg(input)
-        .arg("-frames:v").arg("1")
+        .arg("-update").arg("1")
         .arg("-f").arg("image2")
         .arg("-vcodec").arg("mjpeg")
         .arg("-q:v").arg("2")
