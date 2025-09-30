@@ -52,7 +52,7 @@
         />
       </div>
       <div class="q-mt-sm">
-        <q-checkbox v-model="geoOpts.enabled" label="Geolocation JSON" />
+        <q-checkbox v-model="geoOpts.enabled" label="Geolocation JSON" disable />
       </div>
     </div>
 
