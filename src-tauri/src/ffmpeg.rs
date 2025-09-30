@@ -1,3 +1,6 @@
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -9,14 +12,20 @@ use std::{
 use anyhow::{anyhow, Context};
 use tauri::{path::BaseDirectory, AppHandle, Manager};
 
-// Relative locations of bundled ffmpeg binaries.
-#[cfg(target_os = "macos")]
-const FFMPEG_RELATIVE_PATH: &str = "resources/bin/mac/ffmpeg";
-#[cfg(target_os = "macos")]
-const FFPROBE_RELATIVE_PATH: &str = "resources/bin/mac/ffprobe";
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "macos")] {
+        const FFMPEG_RELATIVE_PATH: &str = "resources/bin/mac/ffmpeg";
+        const FFPROBE_RELATIVE_PATH: &str = "resources/bin/mac/ffprobe";
+    } else if #[cfg(target_os = "windows")] {
+        const FFMPEG_RELATIVE_PATH: &str = "resources/bin/win/ffmpeg.exe";
+        const FFPROBE_RELATIVE_PATH: &str = "resources/bin/win/ffprobe.exe";
+    } else {
+        compile_error!("Bundled ffmpeg binaries are only configured for macOS.");
+    }
+}
 
-#[cfg(not(target_os = "macos"))]
-compile_error!("Bundled ffmpeg binaries are only configured for macOS.");
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Debug)]
 struct Binaries {
@@ -53,6 +62,15 @@ fn resolve_resource(app: &AppHandle, relative: &str) -> anyhow::Result<PathBuf> 
     }
 }
 
+fn command_for(path: &Path) -> Command {
+    let mut cmd = Command::new(path);
+    #[cfg(target_os = "windows")]
+    {
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd
+}
+
 #[derive(Debug, serde::Deserialize)]
 struct ProbeDurOutput {
     format: FFProbeFormat,
@@ -70,7 +88,7 @@ pub fn probe(path: &Path) -> anyhow::Result<ProbeInfo> {
     let bins = binaries();
 
     #[rustfmt::skip]
-    let result = Command::new(&bins.ffprobe)
+    let result = command_for(&bins.ffprobe)
         .args([
             "-v", "error",
             "-select_streams", "v:0",
@@ -109,7 +127,7 @@ pub fn extract_frame(input: &Path, at: Duration) -> anyhow::Result<Vec<u8>> {
     let bins = binaries();
 
     #[rustfmt::skip]
-    let result = Command::new(&bins.ffmpeg)
+    let result = command_for(&bins.ffmpeg)
         .arg("-v").arg("error")
         .arg("-ss").arg(&at.as_secs_f64().to_string())
         .arg("-i").arg(input)
@@ -138,7 +156,7 @@ fn extract_last_frame(input: &Path) -> anyhow::Result<Vec<u8>> {
     let bins = binaries();
 
     #[rustfmt::skip]
-    let result = Command::new(&bins.ffmpeg)
+    let result = command_for(&bins.ffmpeg)
         .arg("-v").arg("error")
         .arg("-sseof").arg("-3")
         .arg("-i").arg(input)
@@ -172,7 +190,7 @@ impl Mp4FrameEncoder {
         let bins = binaries();
 
         #[rustfmt::skip]
-        let child = Command::new(&bins.ffmpeg)
+        let child = command_for(&bins.ffmpeg)
             .arg("-y")
             .arg("-v").arg("error")
             .arg("-f").arg("image2pipe")

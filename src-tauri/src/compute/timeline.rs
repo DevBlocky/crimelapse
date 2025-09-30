@@ -21,7 +21,7 @@ pub struct TimelineClip {
 impl TimelineClip {
     fn process(job: &JobInfo, path: PathBuf) -> anyhow::Result<Self> {
         job.cancel_result()?;
-        
+
         let info = crate::ffmpeg::probe(&path).context("probe info")?;
         let creation_time =
             Self::parse_timestamp_from_path(&path).context("parse timestamp from path")?;

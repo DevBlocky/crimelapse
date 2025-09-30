@@ -14,7 +14,7 @@
       {
         "title": "crimelapse",
         "width": 1024,
-        "height": 1024 
+        "height": 1024
       }
     ],
     "security": {
@@ -33,7 +33,9 @@
     ],
     "resources": [
       "resources/bin/mac/ffmpeg",
-      "resources/bin/mac/ffprobe"
+      "resources/bin/mac/ffprobe",
+      "resources/bin/win/ffmpeg.exe",
+      "resources/bin/win/ffprobe.exe"
     ]
   }
 }
