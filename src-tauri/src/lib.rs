@@ -103,6 +103,7 @@ fn start_job(
     let info_clone = info.clone();
     let run_job = move || -> anyhow::Result<()> {
         let job = compute::ProcessClipsJob::new(threads, Arc::clone(&info_clone), &input_path)?;
+        std::fs::create_dir_all(&output_path)?; // create output directory
         if timelapse.typ != TimelapseType::None {
             let typ = match timelapse.typ {
                 TimelapseType::Jpg => compute::TimelapseType::Jpg,
