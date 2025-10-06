@@ -35,7 +35,9 @@
       "resources/bin/mac/ffmpeg",
       "resources/bin/mac/ffprobe",
       "resources/bin/win/ffmpeg.exe",
-      "resources/bin/win/ffprobe.exe"
+      "resources/bin/win/ffprobe.exe",
+      "resources/glyphconfig.json",
+      "resources/glyphs/**/*.bmp"
     ]
   }
 }

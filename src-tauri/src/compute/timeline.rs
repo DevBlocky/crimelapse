@@ -27,8 +27,8 @@ impl TimelineClip {
             Self::parse_timestamp_from_path(&path).context("parse timestamp from path")?;
 
         job.set_progress(SetProgressInfo::detail(format!(
-            "processed TimelineClip {}",
-            path.to_string_lossy()
+            "processed TimelineClip {:?}",
+            path
         )));
         Ok(Self {
             creation_time,
@@ -113,7 +113,7 @@ impl Timeline {
         }
 
         info.set_progress(SetProgressInfo::detail(format!(
-            "Total combined length of all clips is {:.02}h",
+            "total combined length of all clips is {:.02}h",
             duration.as_secs_f64() / 60.0 / 60.0
         )));
         info.set_progress(SetProgressInfo::detail("--- Finished clips timeline ---"));
@@ -132,5 +132,9 @@ impl Timeline {
     }
     pub fn len(&self) -> Duration {
         self.duration
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &TimelineClip> {
+        self.clips.iter().map(|(_, clip)| clip)
     }
 }

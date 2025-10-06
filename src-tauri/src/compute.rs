@@ -1,3 +1,5 @@
+mod export;
+mod glyph;
 mod timelapse;
 mod timeline;
 mod workers;
@@ -77,6 +79,44 @@ impl ProcessClipsJob {
         )
         .context("create timelapse")?;
         info.set_progress(SetProgressInfo::detail("--- Finished timelapsing ---"));
+        Ok(())
+    }
+
+    pub fn export_data<P: AsRef<Path>>(
+        &self,
+        info: Arc<JobInfo>,
+        location: bool,
+        output_dir: P,
+    ) -> anyhow::Result<()> {
+        info.set_progress(SetProgressInfo {
+            total: Some(0),
+            progress: Some(0),
+            detail: Some("--- Begin exporting timeline ---".into()),
+            ..Default::default()
+        });
+        let locations = if location {
+            Some(
+                glyph::scrape_locations(
+                    Arc::clone(&info),
+                    Arc::clone(&self.timeline),
+                    &self.pool,
+                    output_dir.as_ref(),
+                )
+                .context("scrape locations")?,
+            )
+        } else {
+            None
+        };
+        export::export_timeline(
+            &info,
+            &self.timeline,
+            locations.as_deref(),
+            output_dir.as_ref(),
+        )
+        .context("export timeline")?;
+        info.set_progress(SetProgressInfo::detail(
+            "--- Finished exporting timeline ---",
+        ));
         Ok(())
     }
 }

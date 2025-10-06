@@ -1,6 +1,3 @@
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
 use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -20,12 +17,9 @@ cfg_if::cfg_if! {
         const FFMPEG_RELATIVE_PATH: &str = "resources/bin/win/ffmpeg.exe";
         const FFPROBE_RELATIVE_PATH: &str = "resources/bin/win/ffprobe.exe";
     } else {
-        compile_error!("Bundled ffmpeg binaries are only configured for macOS.");
+        compile_error!("Bundled ffmpeg binaries are not configured for this target");
     }
 }
-
-#[cfg(target_os = "windows")]
-const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 #[derive(Debug)]
 struct Binaries {
@@ -35,19 +29,19 @@ struct Binaries {
 
 static BINARIES: OnceLock<Binaries> = OnceLock::new();
 
+fn binaries() -> &'static Binaries {
+    BINARIES.get().expect("binaries set by lib.rs")
+}
+
 pub fn set_paths(app: &AppHandle) -> anyhow::Result<()> {
     BINARIES
         .set(Binaries {
             ffmpeg: resolve_resource(app, FFMPEG_RELATIVE_PATH)?,
             ffprobe: resolve_resource(app, FFPROBE_RELATIVE_PATH)?,
         })
-        .map_err(|_| anyhow::anyhow!("could not set ffmpeg::BINARIES"))?;
+        .map_err(|_| anyhow::anyhow!("ffmpeg::BINARIES is already set"))?;
     Ok(())
 }
-fn binaries() -> &'static Binaries {
-    BINARIES.get().expect("binaries set by lib.rs")
-}
-
 fn resolve_resource(app: &AppHandle, relative: &str) -> anyhow::Result<PathBuf> {
     match app.path().resolve(relative, BaseDirectory::Resource) {
         Ok(path) => Ok(path),
@@ -63,9 +57,12 @@ fn resolve_resource(app: &AppHandle, relative: &str) -> anyhow::Result<PathBuf> 
 }
 
 fn command_for(path: &Path) -> Command {
+    #[allow(unused_mut)]
     let mut cmd = Command::new(path);
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
         cmd.creation_flags(CREATE_NO_WINDOW);
     }
     cmd
@@ -134,7 +131,7 @@ pub fn extract_frame(input: &Path, at: Duration) -> anyhow::Result<Vec<u8>> {
         .arg("-frames:v").arg("1")
         .arg("-f").arg("image2")
         .arg("-vcodec").arg("mjpeg")
-        .arg("-q:v").arg("2")
+        .arg("-q:v").arg("0")
         .arg("-")
         .output()
         .context("execute ffmpeg to extract frame")?;

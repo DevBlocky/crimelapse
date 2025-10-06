@@ -3,6 +3,7 @@ mod ffmpeg;
 
 use std::{
     collections::HashMap,
+    path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, AtomicUsize},
         Arc, Mutex,
@@ -10,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use tauri::{AppHandle, Emitter, State};
+use tauri::{path::BaseDirectory, AppHandle, Emitter, Manager, State};
 
 // job info and state //
 
@@ -50,6 +51,12 @@ impl JobInfo {
         }
         Ok(())
     }
+    pub fn resolve_resource<P: AsRef<Path>>(&self, path: P) -> PathBuf {
+        self.app
+            .path()
+            .resolve(path, BaseDirectory::Resource)
+            .expect("resolve resource path")
+    }
 }
 struct Jobs {
     id_inc: AtomicUsize,
@@ -74,6 +81,12 @@ struct TimelapseOptions {
     skip: Option<u32>,
 }
 
+#[derive(Debug, serde::Deserialize)]
+struct ExportOptions {
+    enabled: bool,
+    location: bool,
+}
+
 // job commands //
 
 #[tauri::command]
@@ -84,6 +97,7 @@ fn start_job(
     input_path: String,
     output_path: String,
     timelapse: TimelapseOptions,
+    export: ExportOptions,
 ) -> usize {
     // create the JobInfo struct for this job
     let id = jobs
@@ -112,13 +126,16 @@ fn start_job(
             };
             let length = Duration::from_secs(timelapse.length);
             job.create_timelapse(
-                info_clone,
+                Arc::clone(&info_clone),
                 typ,
                 length,
                 timelapse.fps,
                 timelapse.skip,
-                output_path,
+                &output_path,
             )?;
+        }
+        if export.enabled {
+            job.export_data(info_clone, export.location, &output_path)?;
         }
         Ok(())
     };

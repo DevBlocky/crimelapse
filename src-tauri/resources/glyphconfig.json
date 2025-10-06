@@ -1,0 +1,84 @@
+{
+  "glyphRows": [
+    {
+      "top": 1370,
+      "right": 232,
+      "width": 26,
+      "height": 50,
+      "columns": 9
+    },
+    {
+      "top": 1370,
+      "right": 492,
+      "width": 26,
+      "height": 50,
+      "columns": 10
+    }
+  ],
+  "glyphChars": [
+    {
+      "char": "N",
+      "filepath": "resources/glyphs/n.bmp"
+    },
+    {
+      "char": "E",
+      "filepath": "resources/glyphs/e.bmp"
+    },
+    {
+      "char": "W",
+      "filepath": "resources/glyphs/w.bmp"
+    },
+    {
+      "char": "0",
+      "filepath": "resources/glyphs/0.bmp"
+    },
+    {
+      "char": "1",
+      "filepath": "resources/glyphs/1.bmp"
+    },
+    {
+      "char": "2",
+      "filepath": "resources/glyphs/2.bmp"
+    },
+    {
+      "char": "3",
+      "filepath": "resources/glyphs/3.bmp"
+    },
+    {
+      "char": "4",
+      "filepath": "resources/glyphs/4.bmp"
+    },
+    {
+      "char": "5",
+      "filepath": "resources/glyphs/5.bmp"
+    },
+    {
+      "char": "6",
+      "filepath": "resources/glyphs/6.bmp"
+    },
+    {
+      "char": "7",
+      "filepath": "resources/glyphs/7.bmp"
+    },
+    {
+      "char": "8",
+      "filepath": "resources/glyphs/8.bmp"
+    },
+    {
+      "char": "9",
+      "filepath": "resources/glyphs/9.bmp"
+    },
+    {
+      "char": ".",
+      "filepath": "resources/glyphs/dot.bmp"
+    },
+    {
+      "char": ":",
+      "filepath": "resources/glyphs/semicolon.bmp"
+    },
+    {
+      "char": " ",
+      "filepath": "resources/glyphs/blank.bmp"
+    }
+  ]
+}
