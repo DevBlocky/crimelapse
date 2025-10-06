@@ -1,4 +1,5 @@
 use std::{
+    fs,
     io::{Read, Write},
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
@@ -131,7 +132,7 @@ pub fn extract_frame(input: &Path, at: Duration) -> anyhow::Result<Vec<u8>> {
         .arg("-frames:v").arg("1")
         .arg("-f").arg("image2")
         .arg("-vcodec").arg("mjpeg")
-        .arg("-q:v").arg("0")
+        .arg("-q:v").arg("2")
         .arg("-")
         .output()
         .context("execute ffmpeg to extract frame")?;
@@ -152,16 +153,31 @@ pub fn extract_frame(input: &Path, at: Duration) -> anyhow::Result<Vec<u8>> {
 fn extract_last_frame(input: &Path) -> anyhow::Result<Vec<u8>> {
     let bins = binaries();
 
+    // create a temporary file for the last frame
+    // unfortunately, we cannot just output to stdout because then it exports the last 3 seconds of frames
+    let temp_path = tempfile::Builder::new()
+        .prefix(
+            input
+                .file_stem()
+                .expect("file stem of extract_last_frame input"),
+        )
+        .suffix(".jpg")
+        .tempfile()
+        .context("create temp file for ffmpeg last frame output")?
+        .into_temp_path();
+
     #[rustfmt::skip]
     let result = command_for(&bins.ffmpeg)
+        .arg("-y")
         .arg("-v").arg("error")
         .arg("-sseof").arg("-3")
         .arg("-i").arg(input)
-        .arg("-update").arg("1")
         .arg("-f").arg("image2")
+        .arg("-vsync").arg("0")
+        .arg("-update").arg("1")
         .arg("-vcodec").arg("mjpeg")
         .arg("-q:v").arg("2")
-        .arg("-")
+        .arg(&temp_path)
         .output()
         .context("execute ffmpeg to extract frame")?;
 
@@ -172,11 +188,16 @@ fn extract_last_frame(input: &Path) -> anyhow::Result<Vec<u8>> {
         );
     }
 
-    if result.stdout.is_empty() {
+    let frame =
+        fs::read(&temp_path).with_context(|| format!("read last frame from {temp_path:?}"))?;
+    temp_path
+        .close()
+        .context("remove temp file for last frame")?;
+    if frame.is_empty() {
         anyhow::bail!("ffmpeg did not produce frame data");
     }
 
-    Ok(result.stdout)
+    Ok(frame)
 }
 
 pub struct Mp4FrameEncoder {
