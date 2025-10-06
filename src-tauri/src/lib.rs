@@ -172,6 +172,11 @@ fn get_parallelism() -> usize {
         .unwrap_or(1)
 }
 
+#[tauri::command]
+fn read_file(filepath: &Path) -> String {
+    std::fs::read_to_string(filepath).expect("read file from filepath")
+}
+
 // init //
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -192,7 +197,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             start_job,
             cancel_job,
-            get_parallelism
+            get_parallelism,
+            read_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

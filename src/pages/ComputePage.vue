@@ -5,12 +5,14 @@
         v-model="inputPath"
         label="Clips Folder"
         dialog-title="Select Folder w/ Raw Clips"
+        directory
       />
       <folder-input
         v-model="outputPath"
         class="q-mt-md"
         label="Output Folder"
         dialog-title="Select Output Folder"
+        directory
         create-directory
       />
       <div class="row items-start q-mt-sm">
@@ -92,7 +94,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
-import FolderInput from "../components/FolderInput.vue";
+import FolderInput from "../components/FileFolderInput.vue";
 import ProgressPanel from "../components/ProgressPanel.vue";
 import { desktopDir, join } from "@tauri-apps/api/path";
 import { invoke } from "@tauri-apps/api/core";

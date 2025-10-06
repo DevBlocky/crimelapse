@@ -14,6 +14,7 @@ const props = defineProps<{
   label?: string;
   disable?: boolean;
   dialogTitle?: string;
+  directory?: boolean;
   createDirectory?: boolean;
 }>();
 const emit = defineEmits<{
@@ -23,7 +24,7 @@ const emit = defineEmits<{
 async function choosePath() {
   const path = await open({
     title: props.dialogTitle,
-    directory: true,
+    directory: props.directory,
     canCreateDirectories: props.createDirectory,
   });
   if (path) emit("update:modelValue", path);
