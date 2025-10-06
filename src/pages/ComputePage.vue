@@ -58,7 +58,7 @@
         <q-checkbox
           v-if="exportOpts.enabled"
           v-model="exportOpts.location"
-          label="Scrape Geolocation (slow)"
+          label="Scrape Geolocation (slow, but needed for map)"
         />
       </div>
     </div>
@@ -112,8 +112,8 @@ const timelapseOpts = reactive({
   skip: 0,
 });
 const exportOpts = reactive({
-  enabled: true,
-  location: true,
+  enabled: false,
+  location: false,
 });
 const threads = ref(1);
 
