@@ -98,11 +98,17 @@ pub fn timelapse<E: TimelapseEncoder>(
     }));
 
     for (i, job) in jobs.into_iter().enumerate() {
-        enc.encode_frame(job.with_context(|| format!("extract frame {}", i + 1))?)
-            .with_context(|| format!("encode frame {}", i + 1))?;
+        let detail = match job.with_context(|| format!("extract frame {}", i)) {
+            Ok(jpg_data) => {
+                enc.encode_frame(jpg_data)
+                    .with_context(|| format!("encode frame {}", i))?;
+                format!("encoded frame {}/{}", i, num_frames)
+            }
+            Err(e) => format!("WARN: could not extract frame {i}/{num_frames}\n{e}\n\n"),
+        };
         info.set_progress(crate::SetProgressInfo {
             progress_inc: Some(1),
-            detail: Some(format!("encoded frame {}/{}", i + 1, num_frames)),
+            detail: Some(detail),
             ..Default::default()
         });
     }
