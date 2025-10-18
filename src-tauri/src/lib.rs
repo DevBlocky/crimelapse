@@ -3,6 +3,8 @@ mod ffmpeg;
 
 use std::{
     collections::HashMap,
+    fs,
+    io::Write,
     path::{Path, PathBuf},
     sync::{
         atomic::{AtomicBool, AtomicUsize},
@@ -35,9 +37,23 @@ struct JobInfo {
     id: usize,
     is_cancelled: AtomicBool,
     app: AppHandle,
+    logfile_path: PathBuf,
 }
 impl JobInfo {
     pub(crate) fn set_progress(&self, info: SetProgressInfo) {
+        if let Some(detail) = &info.detail {
+            let line = format!(
+                "[{}] {detail}\n",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f")
+            );
+            let mut file = fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&self.logfile_path)
+                .expect("open logfile");
+            file.write_all(line.as_bytes()).expect("write to logfile");
+        }
+
         self.app
             .emit(&format!("progress:{}", self.id), info)
             .expect("emit progress");
@@ -99,6 +115,9 @@ fn start_job(
     timelapse: TimelapseOptions,
     export: ExportOptions,
 ) -> usize {
+    // create the output directory
+    std::fs::create_dir_all(&output_path).expect("create output directory");
+
     // create the JobInfo struct for this job
     let id = jobs
         .id_inc
@@ -107,6 +126,7 @@ fn start_job(
         id,
         is_cancelled: AtomicBool::new(false),
         app,
+        logfile_path: Into::<PathBuf>::into(&output_path).join("output.log"),
     });
     // add the JobInfo struct to the list of currently active jobs
     {
@@ -117,7 +137,6 @@ fn start_job(
     let info_clone = info.clone();
     let run_job = move || -> anyhow::Result<()> {
         let job = compute::ProcessClipsJob::new(threads, Arc::clone(&info_clone), &input_path)?;
-        std::fs::create_dir_all(&output_path)?; // create output directory
         if timelapse.typ != TimelapseType::None {
             let typ = match timelapse.typ {
                 TimelapseType::Jpg => compute::TimelapseType::Jpg,

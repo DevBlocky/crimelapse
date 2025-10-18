@@ -1,29 +1,12 @@
 <template>
   <div class="progress-wrapper">
     <div class="row justify-center items-center">
-      <q-btn
-        class="q-mr-sm"
-        label="Stop"
-        color="negative"
-        @click="emit('stop')"
-      />
-      <q-linear-progress
-        class="col"
-        :value="linearProgress"
-        :indeterminate="total === 0"
-        instant-feedback
-      />
+      <q-btn class="q-mr-sm" label="Stop" color="negative" @click="emit('stop')" />
+      <q-linear-progress class="col" :value="linearProgress" :indeterminate="total === 0" instant-feedback />
     </div>
     <div class="progress-panel q-mt-md">
-      <q-input
-        ref="detailsInput"
-        v-model="detailsWithLines"
-        class="progress-textarea"
-        type="textarea"
-        readonly
-        :input-style="{ height: '100%', overflow: 'auto', whiteSpace: 'pre' }"
-        :input-attrs="{ wrap: 'off' }"
-      />
+      <q-input ref="detailsInput" :model-value="joinedDetails" class="progress-textarea" type="textarea" readonly
+        :input-style="{ height: '100%', overflow: 'auto', whiteSpace: 'pre' }" :input-attrs="{ wrap: 'off' }" />
     </div>
   </div>
 </template>
@@ -52,15 +35,11 @@ const emit = defineEmits<{ (e: "stop"): void }>();
 const PROGRESS_THROTTLE_MS = 100;
 const completed = ref(0);
 const total = ref(0);
-const details = ref("");
+const details = ref<string[]>([]);
 const detailsInput = ref<QInput>();
 
-const detailsWithLines = computed(() =>
-  details.value
-    .split("\n")
-    .slice(0, -1)
-    .map((s, i) => `[${i + 1}] ${s}`)
-    .join("\n")
+const joinedDetails = computed(() =>
+  details.value.join("\n")
 );
 
 let flushHandle: number | null = null;
@@ -68,12 +47,11 @@ let progressUnlisten: UnlistenFn | null = null;
 let pendingCompleted: number | null = null;
 let pendingIncrement = 0;
 let pendingTotal: number | null = null;
+let pendingDetailIndex: number = 0;
 const pendingDetails: string[] = [];
 
 const linearProgress = computed(() => {
-  if (total.value === 0) {
-    return 0;
-  }
+  if (total.value === 0) return 0;
   return completed.value / total.value;
 });
 
@@ -88,13 +66,14 @@ function resetPending() {
   pendingCompleted = null;
   pendingIncrement = 0;
   pendingTotal = null;
+  pendingDetailIndex = 0;
   pendingDetails.length = 0;
 }
 
 function clearDisplayedProgress() {
   completed.value = 0;
   total.value = 0;
-  details.value = "";
+  details.value = [];
 }
 
 function flushProgressUpdates() {
@@ -115,15 +94,15 @@ function flushProgressUpdates() {
 
   if (pendingDetails.length === 0) return;
 
-  const appended = pendingDetails.join("\n");
+  details.value.push(...pendingDetails);
   pendingDetails.length = 0;
-  details.value += appended + "\n";
+
+  if (details.value.length > 10500)
+    details.value = details.value.slice(details.value.length - 10000);
 
   nextTick(() => {
     const textarea = detailsInput.value?.getNativeElement();
-    if (textarea) {
-      textarea.scrollTop = textarea.scrollHeight;
-    }
+    if (textarea) textarea.scrollTop = textarea.scrollHeight;
   });
 }
 
@@ -157,7 +136,8 @@ async function startListening(jobId: unknown) {
       pendingTotal = payload.total;
     }
     if (payload.detail) {
-      pendingDetails.push(payload.detail);
+      pendingDetailIndex++;
+      pendingDetails.push(`[${pendingDetailIndex}] ${payload.detail}`);
     }
 
     scheduleProgressFlush();
